@@ -71,7 +71,7 @@ def classify(headlines):
 def load(headlines):
     logger.info(f"Number of headlines to load: {len(headlines)}")
     with conn.cursor() as cur:
-        cur.execute("CREATE TABLE IF NOT EXISTS headlines (id SERIAL PRIMARY KEY, Title VARCHAR(255), Link VARCHAR(255), Published VARCHAR(255), Sentiment VARCHAR(255))")
+        cur.execute("CREATE TABLE IF NOT EXISTS headlines (id INT AUTO_INCREMENT PRIMARY KEY, Title VARCHAR(255), Published VARCHAR(255), Sentiment VARCHAR(255))")
         for record in headlines:
             cur.execute("INSERT INTO headlines (Title, Published, Sentiment) VALUES(%s, %s, %s)",
                         (record['Title'], record['Published'], record['Sentiment']))

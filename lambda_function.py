@@ -3,13 +3,12 @@ from textblob import TextBlob
 import logging
 import pandas as pd
 import numpy as np
-from xml.etree import ElementTree
 from urllib.request import Request, urlopen
 from bs4 import BeautifulSoup
 import sys
 import os
 from datetime import datetime
-import sqlalchemy
+
 
 
 #create logger
@@ -32,7 +31,6 @@ try:
                            password=password,
                            db=db_name,
                            connect_timeout=5)
-    engine = sqlalchemy.create_engine(f'mysql+pymysql://{username}:{password}@{rds_proxy_host}/{db_name}')
 except Exception as e:
     logger.error("ERROR: Unexpected error: Could not connect to MySql instance.")
     logger.error(e)
@@ -88,12 +86,20 @@ def load(headlines, headlines_dp):
     
     with conn.cursor() as cur:
         cur.execute('CREATE TABLE IF NOT EXISTS headlines (id SERIAL AUTO_INCREMENT PRIMARY KEY, Title VARCHAR(255), Published DATE, Sentiment VARCHAR(255))')
-        cur.execute('CREATE TABLE IF NOT EXISTS daily_percent (id SERIAL AUTO_INCREMENT PRIMARY KEY, Published DATE, Positive FLOAT, Negative FLOAT, Neutral FLOAT)')
-
+        cur.execute('CREATE TABLE IF NOT EXISTS daily_percent (id SERIAL AUTO_INCREMENT, Published DATE PRIMARY KEY, Positive FLOAT, Negative FLOAT, Neutral FLOAT)')
+        for index, row in headlines.iterrows():
+            cur.execute('INSERT INTO headlines (Title, Published, Sentiment) VALUES (%s, %s, %s)', (row['Title'], row['Published'], row['Sentiment']))
+        for index, row in headlines_dp.iterrows():
+            cur.execute('''
+                INSERT INTO daily_percent (Published, Positive, Negative, Neutral) 
+                VALUES (%s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE 
+                    Positive = VALUES(Positive), 
+                    Negative = VALUES(Negative), 
+                    Neutral = VALUES(Neutral)
+            ''', (index, row['Positive'], row['Negative'], row['Neutral']))
+    conn.commit()
     
-    headlines.to_sql('headlines', engine, if_exists='append', index=False)
-    headlines_dp.to_sql('daily_percent', engine, if_exists='append', index=False)
-        
     logger.info("Data loaded into database")
 
 
@@ -107,6 +113,7 @@ def lambda_handler(event, context):
     logger.info(f"Processing feed: {feed}")
     headlines = extract(feed)
     headlines = classify(headlines)
-    load(headlines)
+    headlines_dp = get_daily_percent(headlines)
+    load(headlines, headlines_dp)
     return 'Success'
 

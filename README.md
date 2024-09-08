@@ -9,5 +9,6 @@ Copy the code in the lambda_function.py file and paste to a new lambda function.
 Configure appropriate permissions for accessing external URLS (update outbound rules for security group, add a NAT gateway to VPC) and configure RDS server and RDS proxy in the same VPC for exporting data
 
 # PowerBI Dashboard Link
+## No longer active due to AWS costs
 https://app.powerbi.com/view?r=eyJrIjoiY2NkYWI1NmUtOTU1Zi00ZjdlLTllYTAtM2E3NTE4ZDY2MzJmIiwidCI6IjIyMTc3MTMwLTY0MmYtNDFkOS05MjExLTc0MjM3YWQ1Njg3ZCIsImMiOjN9
 
